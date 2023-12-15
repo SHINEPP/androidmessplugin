@@ -41,13 +41,16 @@ abstract class AarHandleTask : DefaultTask() {
 
     @TaskAction
     fun taskAction() {
+        println("ManifestTask::taskAction: inputAar = ${inputAar.get().asFile}")
+        println("ManifestTask::taskAction: outputAar = ${outputAar.get().asFile}")
+
         if (!mappingFile.isPresent) {
             inputAar.get().asFile.copyTo(outputAar.get().asFile)
             return
         }
 
+        println("ManifestTask::taskAction: mappingFile = ${mappingFile.get().asFile}")
         val classMap = parseMappingClassMap()
-
         ZipFile(inputAar.get().asFile).use { zipFile ->
             ZipOutputStream(outputAar.get().asFile).use { zipOutputStream ->
                 val entries = zipFile.entries

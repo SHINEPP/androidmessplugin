@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.oh.plugin.android.mess"
-version = "1.2"
+version = "1.3"
 
 val ohImplementationClass = "com.oh.plugin.android.mess.MessPlugin"
 
