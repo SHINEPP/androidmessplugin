@@ -7,13 +7,13 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.configurationcache.extensions.capitalized
-import org.gradle.internal.impldep.org.apache.tools.zip.ZipEntry
-import org.gradle.internal.impldep.org.apache.tools.zip.ZipFile
-import org.gradle.internal.impldep.org.apache.tools.zip.ZipOutputStream
 import proguard.obfuscate.MappingProcessor
 import proguard.obfuscate.MappingReader
 import java.io.InputStream
 import java.util.regex.Pattern
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 
 abstract class AarHandleTask : DefaultTask() {
 
@@ -44,6 +44,7 @@ abstract class AarHandleTask : DefaultTask() {
         println("ManifestTask::taskAction: inputAar = ${inputAar.get().asFile}")
         println("ManifestTask::taskAction: outputAar = ${outputAar.get().asFile}")
 
+        outputAar.get().asFile.deleteOnExit()
         if (!mappingFile.isPresent) {
             inputAar.get().asFile.copyTo(outputAar.get().asFile)
             return
@@ -52,8 +53,9 @@ abstract class AarHandleTask : DefaultTask() {
         println("ManifestTask::taskAction: mappingFile = ${mappingFile.get().asFile}")
         val classMap = parseMappingClassMap()
         ZipFile(inputAar.get().asFile).use { zipFile ->
-            ZipOutputStream(outputAar.get().asFile).use { zipOutputStream ->
-                val entries = zipFile.entries
+            outputAar.get().asFile.parentFile.mkdirs()
+            ZipOutputStream(outputAar.get().asFile.outputStream()).use { zipOutputStream ->
+                val entries = zipFile.entries()
                 for (entry in entries) {
                     val name = entry.name
                     zipOutputStream.putNextEntry(ZipEntry(name))
