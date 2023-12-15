@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.oh.plugin.android.mess"
-version = "1.0"
+version = "1.1"
 
 val ohImplementationClass = "com.oh.plugin.android.mess.MessPlugin"
 
@@ -45,7 +45,7 @@ gradlePlugin {
 publishing {
     repositories {
         maven {
-            url = uri(arrayOf(System.getProperty("user.home"), "maven-local-test", "maven-plugin").joinToString(File.separator))
+            url = uri(arrayOf(System.getProperty("user.home"), "maven-local", "maven-plugin").joinToString(File.separator))
         }
 
         maven {
