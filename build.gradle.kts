@@ -1,8 +1,10 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version ("1.8.10")
+    id("java-gradle-plugin")
+    id("maven-publish")
 }
 
-group = "com.oh.plugin.mess"
+group = "com.oh.android.plugin.mess"
 version = "1.0"
 
 repositories {
@@ -27,4 +29,33 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    repositories {
+        maven {
+            url = uri(arrayOf(System.getProperty("user.home"), "maven-local-test", "maven-plugin").joinToString(File.separator))
+        }
+
+        maven {
+            url = uri(properties["maven_url"] as String)
+            credentials {
+                username = properties["maven_user_name"] as String
+                password = properties["maven_password"] as String
+            }
+        }
+    }
+
+    afterEvaluate {
+        publishing {
+            publications {
+                create<MavenPublication>("product") {
+                    from(components["java"])
+                    groupId = group as String
+                    artifactId = "mess"
+                    version = version
+                }
+            }
+        }
+    }
 }
