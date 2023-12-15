@@ -1,4 +1,4 @@
-package com.oh.android.plugin.mess
+package com.oh.plugin.android.mess
 
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.AndroidComponentsExtension

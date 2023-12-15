@@ -4,8 +4,10 @@ plugins {
     id("maven-publish")
 }
 
-group = "com.oh.android.plugin.mess"
+group = "com.oh.plugin.android.mess"
 version = "1.0"
+
+val ohImplementationClass = "com.oh.plugin.android.mess.MessPlugin"
 
 repositories {
     google()
@@ -29,6 +31,15 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+gradlePlugin {
+    plugins {
+        create("version") {
+            id = group as String
+            implementationClass = ohImplementationClass
+        }
+    }
 }
 
 publishing {

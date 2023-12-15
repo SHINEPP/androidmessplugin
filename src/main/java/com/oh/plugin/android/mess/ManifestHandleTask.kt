@@ -1,4 +1,4 @@
-package com.oh.android.plugin.mess
+package com.oh.plugin.android.mess
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
