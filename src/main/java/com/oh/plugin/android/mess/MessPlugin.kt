@@ -28,11 +28,11 @@ class MessPlugin : Plugin<Project> {
 
         // manifest
         val mappingFile = variant.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE)
-        val manifestProcessProvider = project.tasks.register(ManifestHandleTask.getTaskName(variant.name), ManifestHandleTask::class.java) {
+        val aarProcessProvider = project.tasks.register(AarHandleTask.getTaskName(variant.name), AarHandleTask::class.java) {
             it.mappingFile.set(mappingFile)
         }
-        variant.artifacts.use(manifestProcessProvider)
-            .wiredWithFiles(ManifestHandleTask::inputManifest, ManifestHandleTask::outputManifest)
-            .toTransform(SingleArtifact.MERGED_MANIFEST)
+        variant.artifacts.use(aarProcessProvider)
+            .wiredWithFiles(AarHandleTask::inputAar, AarHandleTask::outputAar)
+            .toTransform(SingleArtifact.AAR)
     }
 }

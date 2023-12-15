@@ -6,18 +6,25 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.configurationcache.extensions.capitalized
+import org.gradle.internal.impldep.org.apache.tools.zip.ZipEntry
+import org.gradle.internal.impldep.org.apache.tools.zip.ZipFile
+import org.gradle.internal.impldep.org.apache.tools.zip.ZipOutputStream
 import proguard.obfuscate.MappingProcessor
 import proguard.obfuscate.MappingReader
+import java.io.InputStream
 import java.util.regex.Pattern
 
-abstract class ManifestHandleTask : DefaultTask() {
+abstract class AarHandleTask : DefaultTask() {
 
     companion object {
-        private val taskNames = arrayOf("mess_", "_manifest")
+        private val taskNames = arrayOf("mess", "HandleAar")
+
+        private const val MANIFEST_NAME = "AndroidManifest.xml"
 
         fun getTaskName(variantName: String): String {
             return taskNames.toMutableList().also {
-                it.add(1, variantName.lowercase())
+                it.add(1, variantName.capitalized())
             }.joinToString("")
         }
     }
@@ -27,18 +34,38 @@ abstract class ManifestHandleTask : DefaultTask() {
     abstract val mappingFile: RegularFileProperty
 
     @get:InputFile
-    abstract val inputManifest: RegularFileProperty
+    abstract val inputAar: RegularFileProperty
 
     @get:OutputFile
-    abstract val outputManifest: RegularFileProperty
+    abstract val outputAar: RegularFileProperty
 
     @TaskAction
     fun taskAction() {
         if (!mappingFile.isPresent) {
-            inputManifest.get().asFile.copyTo(outputManifest.get().asFile)
+            inputAar.get().asFile.copyTo(outputAar.get().asFile)
             return
         }
 
+        val classMap = parseMappingClassMap()
+
+        ZipFile(inputAar.get().asFile).use { zipFile ->
+            ZipOutputStream(outputAar.get().asFile).use { zipOutputStream ->
+                val entries = zipFile.entries
+                for (entry in entries) {
+                    val name = entry.name
+                    zipOutputStream.putNextEntry(ZipEntry(name))
+                    val inputStream = zipFile.getInputStream(entry)
+                    if (name == MANIFEST_NAME) {
+                        zipOutputStream.write(handleManifest(classMap, inputStream))
+                    } else {
+                        inputStream.copyTo(zipOutputStream)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun parseMappingClassMap(): Map<String, String> {
         val classMap = LinkedHashMap<String, String>()
         val mappingReader = MappingReader(mappingFile.get().asFile)
         mappingReader.pump(object : MappingProcessor {
@@ -64,33 +91,33 @@ abstract class ManifestHandleTask : DefaultTask() {
                                               newMethodName: String?) {
             }
         })
+        return classMap
+    }
 
+    private fun handleManifest(classMap: Map<String, String>, inputStream: InputStream): ByteArray {
         val newLines = ArrayList<String>()
         val pattern = Pattern.compile(".*android:name=\"(.*)\".*")
         val markPattern = Pattern.compile("<!--.*-->")
-        val lines = inputManifest.get().asFile.readLines()
+        val lines = inputStream.bufferedReader().readLines()
         for (line in lines) {
             val trimLine = line.trim()
             if (trimLine.isEmpty() || markPattern.matcher(trimLine).find()) {
                 continue
             }
-
             val matcher = pattern.matcher(trimLine)
             if (!matcher.find()) {
                 newLines.add(line)
                 continue
             }
-
             val classPath = matcher.group(1)
             val newClassPath = classMap[classPath]
             if (newClassPath == null) {
                 newLines.add(line)
                 continue
             }
-
             newLines.add(line.replace(classPath, newClassPath))
             println("ManifestTask::taskAction: changeManifest, classPath = $classPath, newClassPath = $newClassPath")
         }
-        outputManifest.get().asFile.writeText(newLines.joinToString("\n"))
+        return newLines.joinToString("\n").toByteArray()
     }
 }
